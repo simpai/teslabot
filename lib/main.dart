@@ -14,7 +14,6 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  WidgetsFlutterBinding.ensureInitialized();
   if (!kIsWeb) {
     await Flame.device.setLandscape();
     await Flame.device.fullScreen();
