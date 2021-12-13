@@ -1,12 +1,19 @@
 import 'package:bonfire/bonfire.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:teslabot/manual_map/game_manual_map.dart';
 import 'package:teslabot/simple_example/simple_example_game.dart';
 import 'package:teslabot/tiled_map/game_tiled_map.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
+
+import 'firebase_options.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   WidgetsFlutterBinding.ensureInitialized();
   if (!kIsWeb) {
     await Flame.device.setLandscape();
@@ -28,11 +35,11 @@ class Menu extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Text(
+            const Text(
               'Bonfire',
               style: TextStyle(fontSize: 30, color: Colors.white),
             ),
-            SizedBox(
+            const SizedBox(
               height: 30,
             ),
             SizedBox(
@@ -45,17 +52,17 @@ class Menu extends StatelessWidget {
                     ),
                   ),
                 ),
-                child: Text('Simple example'),
+                child: const Text('Simple example'),
                 onPressed: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => SimpleExampleGame()),
+                        builder: (context) => const SimpleExampleGame()),
                   );
                 },
               ),
             ),
-            SizedBox(
+            const SizedBox(
               height: 10,
             ),
             SizedBox(
@@ -68,7 +75,7 @@ class Menu extends StatelessWidget {
                     ),
                   ),
                 ),
-                child: Text('Manual Map'),
+                child: const Text('Manual Map'),
                 onPressed: () {
                   Navigator.push(
                     context,
@@ -77,7 +84,7 @@ class Menu extends StatelessWidget {
                 },
               ),
             ),
-            SizedBox(
+            const SizedBox(
               height: 10,
             ),
             SizedBox(
@@ -90,12 +97,12 @@ class Menu extends StatelessWidget {
                     ),
                   ),
                 ),
-                child: Text('Tiled Map'),
+                child: const Text('Tiled Map'),
                 onPressed: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => GameTiledMap(),
+                      builder: (context) => const GameTiledMap(),
                     ),
                   );
                 },
@@ -106,10 +113,10 @@ class Menu extends StatelessWidget {
       ),
       bottomNavigationBar: Container(
         height: 40,
-        child: Center(
-          child: Text(
+        child: const Center(
+          child: const Text(
             'Keyboard: directional and Space Bar to attack',
-            style: TextStyle(fontSize: 18),
+            style: const TextStyle(fontSize: 18),
           ),
         ),
       ),
