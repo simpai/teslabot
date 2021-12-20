@@ -55,22 +55,40 @@ class _AuthTestState extends State<AuthTest> {
           child: Row(
             children: [
               TextButton(
-                child: const Text('signInAnonymously'),
+                child: const Text('Sign In Anonymously'),
                 onPressed: () async {
                   await FirebaseAuth.instance.signInAnonymously();
                 },
               ),
               TextButton(
-                child: const Text('signInTwitter'),
+                child: const Text('Sign In with Twitter Popup'),
                 onPressed: () async {
                   await signInWithTwitter();
+                },
+              ),
+              TextButton(
+                child: const Text('Sign In with Twitter Redirect'),
+                onPressed: () async {
+                  await signInWithTwitterRedirect();
+                },
+              ),
+              TextButton(
+                child: const Text('Sign Out'),
+                onPressed: () async {
+                  await FirebaseAuth.instance.signOut();
+                },
+              ),
+              TextButton(
+                child: const Text('Refresh'),
+                onPressed: () async {
+                  setState(() {});
                 },
               ),
             ],
           ),
         ),
-        const Expanded(child: MyHomePage()),
-        const Expanded(child: GameTiledMap()),
+        const Expanded(flex: 1, child: MyHomePage()),
+        const Expanded(flex: 5, child: GameTiledMap()),
       ],
     );
   }
@@ -82,9 +100,14 @@ Future<UserCredential> signInWithTwitter() async {
 
   // Once signed in, return the UserCredential
   return await FirebaseAuth.instance.signInWithPopup(twitterProvider);
+}
+
+Future<void> signInWithTwitterRedirect() async {
+  // Create a new provider
+  TwitterAuthProvider twitterProvider = TwitterAuthProvider();
 
   // Or use signInWithRedirect
-  // return await FirebaseAuth.instance.signInWithRedirect(twitterProvider);
+  await FirebaseAuth.instance.signInWithRedirect(twitterProvider);
 }
 
 class MyHomePage extends StatefulWidget {
@@ -228,53 +251,48 @@ class _MyHomePageState extends State<MyHomePage> {
     if (!initialized) return Container();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Flutter Database Example'),
-      ),
       body: Column(
         children: [
-          Flexible(
-            child: Center(
+          if (FirebaseAuth.instance.currentUser != null) ...[
+            Center(
               child: _error == null
                   ? Text(
-                      'Button tapped $_counter time${_counter == 1 ? '' : 's'}.\n\n'
-                      'This includes all devices, ever.',
-                    )
+                      'Button tapped $_counter time${_counter == 1 ? '' : 's'}.\n\n')
                   : Text(
                       'Error retrieving button tap count:\n${_error!.message}',
                     ),
             ),
-          ),
-          ElevatedButton(
-            onPressed: _incrementAsTransaction,
-            child: const Text('Increment as transaction'),
-          ),
-          ListTile(
-            leading: Checkbox(
-              onChanged: _setAnchorToBottom,
-              value: _anchorToBottom,
+            ElevatedButton(
+              onPressed: _incrementAsTransaction,
+              child: const Text('Increment as transaction'),
             ),
-            title: const Text('Anchor to bottom'),
-          ),
-          Flexible(
-            child: FirebaseAnimatedList(
-              key: ValueKey<bool>(_anchorToBottom),
-              query: _messagesRef,
-              reverse: _anchorToBottom,
-              itemBuilder: (context, snapshot, animation, index) {
-                return SizeTransition(
-                  sizeFactor: animation,
-                  child: ListTile(
-                    trailing: IconButton(
-                      onPressed: () => _deleteMessage(snapshot),
-                      icon: const Icon(Icons.delete),
+            ListTile(
+              leading: Checkbox(
+                onChanged: _setAnchorToBottom,
+                value: _anchorToBottom,
+              ),
+              title: const Text('Anchor to bottom'),
+            ),
+            Flexible(
+              child: FirebaseAnimatedList(
+                key: ValueKey<bool>(_anchorToBottom),
+                query: _messagesRef,
+                reverse: _anchorToBottom,
+                itemBuilder: (context, snapshot, animation, index) {
+                  return SizeTransition(
+                    sizeFactor: animation,
+                    child: ListTile(
+                      trailing: IconButton(
+                        onPressed: () => _deleteMessage(snapshot),
+                        icon: const Icon(Icons.delete),
+                      ),
+                      title: Text('$index: ${snapshot.value.toString()}'),
                     ),
-                    title: Text('$index: ${snapshot.value.toString()}'),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
-          ),
+          ]
         ],
       ),
       floatingActionButton: FloatingActionButton(
