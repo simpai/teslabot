@@ -1,25 +1,25 @@
 import 'dart:math';
 
 import 'package:bonfire/bonfire.dart';
+import 'package:flutter/material.dart';
 import 'package:teslabot/shared/decoration/barrel_dragable.dart';
 import 'package:teslabot/shared/decoration/chest.dart';
 import 'package:teslabot/shared/decoration/spikes.dart';
 import 'package:teslabot/shared/decoration/torch.dart';
 import 'package:teslabot/shared/enemy/goblin.dart';
-import 'package:flutter/material.dart';
 
 class DungeonMap {
   static double tileSize = 45;
-  static final String wallBottom = 'tile/wall_bottom.png';
-  static final String wall = 'tile/wall.png';
-  static final String wallTop = 'tile/wall_top.png';
-  static final String wallLeft = 'tile/wall_left.png';
-  static final String wallBottomLeft = 'tile/wall_bottom_left.png';
-  static final String wallRight = 'tile/wall_right.png';
-  static final String floor_1 = 'tile/floor_1.png';
-  static final String floor_2 = 'tile/floor_2.png';
-  static final String floor_3 = 'tile/floor_3.png';
-  static final String floor_4 = 'tile/floor_4.png';
+  static const String wallBottom = 'tile/wall_bottom.png';
+  static const String wall = 'tile/wall.png';
+  static const String wallTop = 'tile/wall_top.png';
+  static const String wallLeft = 'tile/wall_left.png';
+  static const String wallBottomLeft = 'tile/wall_bottom_left.png';
+  static const String wallRight = 'tile/wall_right.png';
+  static const String floor_1 = 'tile/floor_1.png';
+  static const String floor_2 = 'tile/floor_2.png';
+  static const String floor_3 = 'tile/floor_3.png';
+  static const String floor_4 = 'tile/floor_4.png';
 
   static MapWorld map() {
     List<TileModel> tileList = [];

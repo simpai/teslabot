@@ -2,17 +2,19 @@ import 'dart:math';
 
 import 'package:bonfire/bonfire.dart';
 import 'package:bonfire/util/game_controller.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:teslabot/manual_map/dungeon_map.dart';
 import 'package:teslabot/shared/enemy/goblin.dart';
 import 'package:teslabot/shared/interface/knight_interface.dart';
 import 'package:teslabot/shared/player/knight.dart';
 import 'package:teslabot/shared/util/common_sprite_sheet.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class GameManualMap extends StatelessWidget implements GameListener {
   final GameController _controller = GameController();
+
+  GameManualMap({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +40,7 @@ class GameManualMap extends StatelessWidget implements GameListener {
               sprite: Sprite.load('joystick_atack.png'),
               align: JoystickActionAlign.BOTTOM_RIGHT,
               size: 80,
-              margin: EdgeInsets.only(bottom: 50, right: 50),
+              margin: const EdgeInsets.only(bottom: 50, right: 50),
             ),
             JoystickAction(
               actionId: PlayerAttackType.AttackRange,
@@ -46,7 +48,7 @@ class GameManualMap extends StatelessWidget implements GameListener {
               spriteBackgroundDirection: Sprite.load('joystick_background.png'),
               size: 50,
               enableDirection: true,
-              margin: EdgeInsets.only(bottom: 50, right: 160),
+              margin: const EdgeInsets.only(bottom: 50, right: 160),
             )
           ],
         ),

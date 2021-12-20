@@ -1,6 +1,9 @@
 import 'dart:math';
 
 import 'package:bonfire/bonfire.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:teslabot/manual_map/dungeon_map.dart';
 import 'package:teslabot/shared/decoration/barrel_dragable.dart';
 import 'package:teslabot/shared/decoration/chest.dart';
@@ -9,9 +12,6 @@ import 'package:teslabot/shared/decoration/torch.dart';
 import 'package:teslabot/shared/enemy/goblin.dart';
 import 'package:teslabot/shared/interface/knight_interface.dart';
 import 'package:teslabot/shared/player/knight.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../shared/decoration/column.dart';
 
@@ -47,7 +47,7 @@ class GameTiledMap extends StatelessWidget {
                 sprite: Sprite.load('joystick_atack.png'),
                 align: JoystickActionAlign.BOTTOM_RIGHT,
                 size: 80,
-                margin: EdgeInsets.only(bottom: 50, right: 50),
+                margin: const EdgeInsets.only(bottom: 50, right: 50),
               ),
               JoystickAction(
                 actionId: PlayerAttackType.AttackRange,
@@ -57,7 +57,7 @@ class GameTiledMap extends StatelessWidget {
                 ),
                 enableDirection: true,
                 size: 50,
-                margin: EdgeInsets.only(bottom: 50, right: 160),
+                margin: const EdgeInsets.only(bottom: 50, right: 160),
               )
             ],
           ),
