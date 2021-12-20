@@ -253,7 +253,7 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       body: Column(
         children: [
-          if (FirebaseAuth.instance.currentUser != null) ...[
+          if (true) ...[
             Center(
               child: _error == null
                   ? Text(
