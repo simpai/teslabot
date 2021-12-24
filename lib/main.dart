@@ -83,6 +83,9 @@ class _TeslaWorldAppState extends State<TeslaWorldApp> {
           child: Row(
             children: [
               if (appModel.signedIn) ...[
+                (appModel.photoURL != null)
+                    ? Image.network(appModel.photoURL!)
+                    : const SizedBox(),
                 TextButton(
                   child: const Text('Sign Out'),
                   onPressed: () async {

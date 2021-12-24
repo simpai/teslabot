@@ -5,8 +5,8 @@ abstract class AppModel extends ChangeNotifier {
   void signIn({String? photoUrl, String? displayName});
   void signOut();
 
-  String? displayName;
-  String? photoURL;
+  String? get displayName;
+  String? get photoURL;
   bool debugMode = false;
   bool signedIn = false;
 }
@@ -17,10 +17,18 @@ class AppModelImplementation extends AppModel {
         const String.fromEnvironment('DEBUG_MODE', defaultValue: '0') != '0';
   }
 
+  String? _displayName;
+  @override
+  String? get displayName => _displayName;
+
+  String? _photoURL;
+  @override
+  String? get photoURL => _photoURL;
+
   @override
   void signIn({String? photoUrl, String? displayName}) {
-    photoUrl = photoUrl;
-    displayName = displayName;
+    _photoURL = photoUrl;
+    _displayName = displayName;
     signedIn = true;
     notifyListeners();
   }
