@@ -4,10 +4,12 @@ import 'package:bonfire/bonfire.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_database/ui/firebase_animated_list.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
+import 'package:teslabot/app_model.dart';
 import 'package:teslabot/tiled_map/game_tiled_map.dart';
+import 'package:teslabot/world_model.dart';
 
 import 'firebase_options.dart';
 
@@ -20,9 +22,18 @@ void main() async {
   await FirebaseAuth.instance.setPersistence(Persistence.LOCAL);
   FirebaseAuth.instance.authStateChanges().listen((User? user) {
     if (user == null) {
-      print('User is currently signed out!');
+      appModel.signOut();
     } else {
-      print('User is signed in!');
+      List<UserInfo> providerData = user.providerData;
+      if (providerData.isNotEmpty) {
+        if (providerData[0].providerId == 'twitter.com') {
+          appModel.signIn(
+              photoUrl: providerData[0].photoURL,
+              displayName: providerData[0].displayName);
+        }
+      } else {
+        appModel.signIn();
+      }
     }
   });
 
@@ -32,21 +43,38 @@ void main() async {
     await Flame.device.setLandscape();
     await Flame.device.fullScreen();
   }
+
+  GetIt.I.registerSingleton<AppModel>(AppModelImplementation());
+
   runApp(
     const MaterialApp(
-      home: AuthTest(),
+      home: TeslaWorldApp(),
     ),
   );
 }
 
-class AuthTest extends StatefulWidget {
-  const AuthTest({Key? key}) : super(key: key);
+class TeslaWorldApp extends StatefulWidget {
+  const TeslaWorldApp({Key? key}) : super(key: key);
 
   @override
-  State<AuthTest> createState() => _AuthTestState();
+  State<TeslaWorldApp> createState() => _TeslaWorldAppState();
 }
 
-class _AuthTestState extends State<AuthTest> {
+class _TeslaWorldAppState extends State<TeslaWorldApp> {
+  @override
+  void initState() {
+    super.initState();
+    appModel.addListener(update);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    appModel.removeListener(update);
+  }
+
+  void update() => setState(() => {});
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -54,40 +82,37 @@ class _AuthTestState extends State<AuthTest> {
         Center(
           child: Row(
             children: [
-              TextButton(
-                child: const Text('Sign In Anonymously'),
-                onPressed: () async {
-                  await FirebaseAuth.instance.signInAnonymously();
-                },
-              ),
-              TextButton(
-                child: const Text('Sign In with Twitter Popup'),
-                onPressed: () async {
-                  await signInWithTwitter();
-                },
-              ),
-              TextButton(
-                child: const Text('Sign In with Twitter Redirect'),
-                onPressed: () async {
-                  await signInWithTwitterRedirect();
-                },
-              ),
-              TextButton(
-                child: const Text('Sign Out'),
-                onPressed: () async {
-                  await FirebaseAuth.instance.signOut();
-                },
-              ),
-              TextButton(
-                child: const Text('Refresh'),
-                onPressed: () async {
-                  setState(() {});
-                },
-              ),
+              if (appModel.signedIn) ...[
+                TextButton(
+                  child: const Text('Sign Out'),
+                  onPressed: () async {
+                    await FirebaseAuth.instance.signOut();
+                  },
+                ),
+              ] else ...[
+                TextButton(
+                  child: const Text('SignIn'),
+                  onPressed: () async {
+                    await FirebaseAuth.instance.signInAnonymously();
+                  },
+                ),
+                TextButton(
+                  child: const Text('SignIn Twit Popup'),
+                  onPressed: () async {
+                    await signInWithTwitter();
+                  },
+                ),
+                TextButton(
+                  child: const Text('SignIn Twit Redirect'),
+                  onPressed: () async {
+                    await signInWithTwitterRedirect();
+                  },
+                ),
+              ]
             ],
           ),
         ),
-        const Expanded(flex: 1, child: MyHomePage()),
+        const Expanded(flex: 1, child: WorldModel()),
         const Expanded(flex: 5, child: GameTiledMap()),
       ],
     );
@@ -108,198 +133,4 @@ Future<void> signInWithTwitterRedirect() async {
 
   // Or use signInWithRedirect
   await FirebaseAuth.instance.signInWithRedirect(twitterProvider);
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key}) : super(key: key);
-
-  @override
-  _MyHomePageState createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-  late DatabaseReference _counterRef;
-  late DatabaseReference _messagesRef;
-  late StreamSubscription<DatabaseEvent> _counterSubscription;
-  late StreamSubscription<DatabaseEvent> _messagesSubscription;
-  bool _anchorToBottom = false;
-
-  final String _kTestKey = 'Hello';
-  final String _kTestValue = 'world!';
-  FirebaseException? _error;
-  bool initialized = false;
-
-  @override
-  void initState() {
-    init();
-    super.initState();
-  }
-
-  Future<void> init() async {
-    _counterRef = FirebaseDatabase.instance.ref('counter');
-
-    final database = FirebaseDatabase.instance;
-
-    _messagesRef = database.ref('messages');
-
-    database.setLoggingEnabled(false);
-
-    if (!kIsWeb) {
-      database.setPersistenceEnabled(true);
-      database.setPersistenceCacheSizeBytes(10000000);
-    }
-
-    if (!kIsWeb) {
-      await _counterRef.keepSynced(true);
-    }
-
-    setState(() {
-      initialized = true;
-    });
-
-    try {
-      final counterSnapshot = await _counterRef.get();
-
-      print(
-        'Connected to directly configured database and read '
-        '${counterSnapshot.value}',
-      );
-    } catch (err) {
-      print(err);
-    }
-
-    _counterSubscription = _counterRef.onValue.listen(
-      (DatabaseEvent event) {
-        setState(() {
-          _error = null;
-          _counter = (event.snapshot.value ?? 0) as int;
-        });
-      },
-      onError: (Object o) {
-        final error = o as FirebaseException;
-        setState(() {
-          _error = error;
-        });
-      },
-    );
-
-    final messagesQuery = _messagesRef.limitToLast(10);
-
-    _messagesSubscription = messagesQuery.onChildAdded.listen(
-      (DatabaseEvent event) {
-        print('Child added: ${event.snapshot.value}');
-      },
-      onError: (Object o) {
-        final error = o as FirebaseException;
-        print('Error: ${error.code} ${error.message}');
-      },
-    );
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    _messagesSubscription.cancel();
-    _counterSubscription.cancel();
-  }
-
-  Future<void> _increment() async {
-    await _counterRef.set(ServerValue.increment(1));
-
-    await _messagesRef.push().set(<String, String>{
-      _kTestKey:
-          '$_kTestValue ${FirebaseAuth.instance.currentUser?.displayName} $_counter'
-    });
-  }
-
-  Future<void> _incrementAsTransaction() async {
-    try {
-      final transactionResult = await _counterRef.runTransaction((mutableData) {
-        return Transaction.success((mutableData as int? ?? 0) + 1);
-      });
-
-      if (transactionResult.committed) {
-        final newMessageRef = _messagesRef.push();
-        await newMessageRef.set(<String, String>{
-          _kTestKey:
-              '$_kTestValue ${FirebaseAuth.instance.currentUser?.displayName} ${transactionResult.snapshot.value}'
-        });
-      }
-    } on FirebaseException catch (e) {
-      print(e.message);
-    }
-  }
-
-  Future<void> _deleteMessage(DataSnapshot snapshot) async {
-    final messageRef = _messagesRef.child(snapshot.key!);
-    await messageRef.remove();
-  }
-
-  void _setAnchorToBottom(bool? value) {
-    if (value == null) {
-      return;
-    }
-
-    setState(() {
-      _anchorToBottom = value;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (!initialized) return Container();
-
-    return Scaffold(
-      body: Column(
-        children: [
-          if (true) ...[
-            Center(
-              child: _error == null
-                  ? Text(
-                      'Button tapped $_counter time${_counter == 1 ? '' : 's'}.\n\n')
-                  : Text(
-                      'Error retrieving button tap count:\n${_error!.message}',
-                    ),
-            ),
-            ElevatedButton(
-              onPressed: _incrementAsTransaction,
-              child: const Text('Increment as transaction'),
-            ),
-            ListTile(
-              leading: Checkbox(
-                onChanged: _setAnchorToBottom,
-                value: _anchorToBottom,
-              ),
-              title: const Text('Anchor to bottom'),
-            ),
-            Flexible(
-              child: FirebaseAnimatedList(
-                key: ValueKey<bool>(_anchorToBottom),
-                query: _messagesRef,
-                reverse: _anchorToBottom,
-                itemBuilder: (context, snapshot, animation, index) {
-                  return SizeTransition(
-                    sizeFactor: animation,
-                    child: ListTile(
-                      trailing: IconButton(
-                        onPressed: () => _deleteMessage(snapshot),
-                        icon: const Icon(Icons.delete),
-                      ),
-                      title: Text('$index: ${snapshot.value.toString()}'),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ]
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _increment,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
-    );
-  }
 }

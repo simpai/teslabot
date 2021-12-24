@@ -37,6 +37,7 @@ dependencies:
   firebase_core: ^1.10.5
   firebase_database: ^9.0.4
   firebase_auth: ^3.3.4
+  get_it: ^7.2.0
 
 dev_dependencies:
   test: any
