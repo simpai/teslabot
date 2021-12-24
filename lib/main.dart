@@ -115,7 +115,9 @@ class _TeslaWorldAppState extends State<TeslaWorldApp> {
             ],
           ),
         ),
-        const Expanded(flex: 1, child: WorldModel()),
+        if (appModel.signedIn) ...[
+          const Expanded(flex: 1, child: WorldModel()),
+        ],
         const Expanded(flex: 5, child: GameTiledMap()),
       ],
     );

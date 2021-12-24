@@ -5,6 +5,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_database/ui/firebase_animated_list.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:teslabot/app_model.dart';
 
 class WorldModel extends StatefulWidget {
   const WorldModel({Key? key}) : super(key: key);
@@ -14,15 +15,15 @@ class WorldModel extends StatefulWidget {
 }
 
 class _WorldModelState extends State<WorldModel> {
-  int _counter = 0;
-  late DatabaseReference _counterRef;
-  late DatabaseReference _messagesRef;
-  late StreamSubscription<DatabaseEvent> _counterSubscription;
-  late StreamSubscription<DatabaseEvent> _messagesSubscription;
-  bool _anchorToBottom = false;
+  int numUsers = 0;
+  late DatabaseReference _usersRef;
 
-  final String _kTestKey = 'Hello';
-  final String _kTestValue = 'world!';
+  late StreamSubscription<DatabaseEvent> _userAddedSubscription;
+  late StreamSubscription<DatabaseEvent> _userRemovedSubscription;
+  late StreamSubscription<DatabaseEvent> _userChangedSubscription;
+  late StreamSubscription<DatabaseEvent> _userMovedSubscription;
+  late StreamSubscription<DatabaseEvent> _userValueSubscription;
+
   FirebaseException? _error;
   bool initialized = false;
 
@@ -32,14 +33,16 @@ class _WorldModelState extends State<WorldModel> {
     super.initState();
   }
 
+  void onErrorHandler(Object o) {
+    _error = o as FirebaseException;
+    // print('Error: ${error.code} ${error.message}');
+  }
+
   Future<void> init() async {
-    _counterRef = FirebaseDatabase.instance.ref('counter');
-
     final database = FirebaseDatabase.instance;
-
-    _messagesRef = database.ref('messages');
-
     database.setLoggingEnabled(false);
+
+    _usersRef = database.ref('users');
 
     if (!kIsWeb) {
       database.setPersistenceEnabled(true);
@@ -47,100 +50,72 @@ class _WorldModelState extends State<WorldModel> {
     }
 
     if (!kIsWeb) {
-      await _counterRef.keepSynced(true);
+      await _usersRef.keepSynced(true);
     }
 
     setState(() {
       initialized = true;
     });
 
-    try {
-      final counterSnapshot = await _counterRef.get();
+    final usersQuery = _usersRef.limitToLast(50);
 
-      print(
-        'Connected to directly configured database and read '
-        '${counterSnapshot.value}',
-      );
-    } catch (err) {
-      print(err);
-    }
+    _userAddedSubscription =
+        usersQuery.onChildAdded.listen((DatabaseEvent event) {
+      print('Child added: ${event.snapshot.value}');
+    }, onError: onErrorHandler);
 
-    _counterSubscription = _counterRef.onValue.listen(
-      (DatabaseEvent event) {
-        setState(() {
-          _error = null;
-          _counter = (event.snapshot.value ?? 0) as int;
-        });
-      },
-      onError: (Object o) {
-        final error = o as FirebaseException;
-        setState(() {
-          _error = error;
-        });
-      },
-    );
+    _userRemovedSubscription =
+        usersQuery.onChildRemoved.listen((DatabaseEvent event) {
+      print('Child removed: ${event.snapshot.value}');
+    }, onError: onErrorHandler);
 
-    final messagesQuery = _messagesRef.limitToLast(10);
+    _userChangedSubscription =
+        usersQuery.onChildChanged.listen((DatabaseEvent event) {
+      print('Child changed: ${event.snapshot.key} ${event.snapshot.value}');
+    }, onError: onErrorHandler);
 
-    _messagesSubscription = messagesQuery.onChildAdded.listen(
-      (DatabaseEvent event) {
-        print('Child added: ${event.snapshot.value}');
-      },
-      onError: (Object o) {
-        final error = o as FirebaseException;
-        print('Error: ${error.code} ${error.message}');
-      },
-    );
+    _userMovedSubscription =
+        usersQuery.onChildMoved.listen((DatabaseEvent event) {
+      print('Child moved: ${event.snapshot.value}');
+    }, onError: onErrorHandler);
+
+    _userValueSubscription = usersQuery.onValue.listen((DatabaseEvent event) {
+      print('Child value: ${event.snapshot.key} ${event.snapshot.value}');
+    }, onError: onErrorHandler);
   }
 
   @override
   void dispose() {
     super.dispose();
-    _messagesSubscription.cancel();
-    _counterSubscription.cancel();
+    _userAddedSubscription.cancel();
+    _userRemovedSubscription.cancel();
+    _userChangedSubscription.cancel();
+    _userMovedSubscription.cancel();
+    _userValueSubscription.cancel();
   }
 
-  Future<void> _increment() async {
-    await _counterRef.set(ServerValue.increment(1));
+  // Future<void> onSignIn(String action) async {
+  //   await _usersRef.child('simpai').set(action);
+  // }
 
-    await _messagesRef.push().set(<String, String>{
-      _kTestKey:
-          '$_kTestValue ${FirebaseAuth.instance.currentUser?.displayName} $_counter'
-    });
+  // Future<void> onSignOut() async {
+  //   await _usersRef.child('simpai').set(action);
+  // }
+
+  // Future<void> _signOutUser(DataSnapshot snapshot) async {
+  //   final usersRef = _usersRef.child(snapshot.key!);
+  //   await messageRef.remove();
+  // }
+
+  Future<void> setAction(String path, String action) async {
+    await _usersRef.child('$path/action').set(action);
   }
 
-  Future<void> _incrementAsTransaction() async {
-    try {
-      final transactionResult = await _counterRef.runTransaction((mutableData) {
-        return Transaction.success((mutableData as int? ?? 0) + 1);
-      });
-
-      if (transactionResult.committed) {
-        final newMessageRef = _messagesRef.push();
-        await newMessageRef.set(<String, String>{
-          _kTestKey:
-              '$_kTestValue ${FirebaseAuth.instance.currentUser?.displayName} ${transactionResult.snapshot.value}'
-        });
-      }
-    } on FirebaseException catch (e) {
-      print(e.message);
-    }
+  Future<void> setMessage(String path, String msg) async {
+    await _usersRef.child('$path/message').set(msg);
   }
 
-  Future<void> _deleteMessage(DataSnapshot snapshot) async {
-    final messageRef = _messagesRef.child(snapshot.key!);
-    await messageRef.remove();
-  }
-
-  void _setAnchorToBottom(bool? value) {
-    if (value == null) {
-      return;
-    }
-
-    setState(() {
-      _anchorToBottom = value;
-    });
-  }
+  Future<void> move(int x, int y) async {}
 
   @override
   Widget build(BuildContext context) {
@@ -149,52 +124,59 @@ class _WorldModelState extends State<WorldModel> {
     return Scaffold(
       body: Column(
         children: [
-          if (true) ...[
-            Center(
-              child: _error == null
-                  ? Text(
-                      'Button tapped $_counter time${_counter == 1 ? '' : 's'}.\n\n')
-                  : Text(
-                      'Error retrieving button tap count:\n${_error!.message}',
-                    ),
-            ),
-            ElevatedButton(
-              onPressed: _incrementAsTransaction,
-              child: const Text('Increment as transaction'),
-            ),
-            ListTile(
-              leading: Checkbox(
-                onChanged: _setAnchorToBottom,
-                value: _anchorToBottom,
+          Row(
+            children: [
+              ElevatedButton(
+                onPressed: () => move(-1, 0),
+                child: const Icon(Icons.arrow_left),
               ),
-              title: const Text('Anchor to bottom'),
-            ),
-            Flexible(
-              child: FirebaseAnimatedList(
-                key: ValueKey<bool>(_anchorToBottom),
-                query: _messagesRef,
-                reverse: _anchorToBottom,
-                itemBuilder: (context, snapshot, animation, index) {
-                  return SizeTransition(
-                    sizeFactor: animation,
-                    child: ListTile(
-                      trailing: IconButton(
-                        onPressed: () => _deleteMessage(snapshot),
-                        icon: const Icon(Icons.delete),
-                      ),
-                      title: Text('$index: ${snapshot.value.toString()}'),
-                    ),
-                  );
-                },
+              ElevatedButton(
+                onPressed: () => move(0, 1),
+                child: const Icon(Icons.arrow_upward),
               ),
-            ),
-          ]
+              ElevatedButton(
+                onPressed: () => move(0, -1),
+                child: const Icon(Icons.arrow_downward),
+              ),
+              ElevatedButton(
+                onPressed: () => move(1, 0),
+                child: const Icon(Icons.arrow_right),
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              ElevatedButton(
+                onPressed: () => setAction('happy', 'idle'),
+                child: const Text('happy/idle'),
+              ),
+              ElevatedButton(
+                onPressed: () => setAction('happy', 'walk'),
+                child: const Text('happy/walk'),
+              ),
+              ElevatedButton(
+                onPressed: () => setAction('happy', 'sleep'),
+                child: const Text('happy/sleep'),
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              ElevatedButton(
+                onPressed: () => setAction('simpai', 'idle'),
+                child: const Text('simpai/idle'),
+              ),
+              ElevatedButton(
+                onPressed: () => setAction('simpai', 'walk'),
+                child: const Text('simpai/walk'),
+              ),
+              ElevatedButton(
+                onPressed: () => setAction('simpai', 'sleep'),
+                child: const Text('simpai/sleep'),
+              ),
+            ],
+          ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _increment,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
       ),
     );
   }
